@@ -9,7 +9,7 @@ Resources:
   StockTradingStateMachine:
     Type: AWS::Serverless::StateMachine # More info about State Machine Resource: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-statemachine.html
     Properties:
-      DefinitionUri: statemachine/stock_trader.asl.json
+      DefinitionUri: statemachine/rosetta_asl.json
       DefinitionSubstitutions:
         StockCheckerFunctionArn: !GetAtt StockCheckerFunction.Arn
         StockSellerFunctionArn: !GetAtt StockSellerFunction.Arn
@@ -54,11 +54,18 @@ Resources:
       Handler: app.lambda_handler
       Runtime: python3.8
 
+  FileValidator:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/file_validator/
+      Handler: app.lambda_handler
+      Runtime: python3.8
+
   TransactionTable:
     Type: AWS::Serverless::SimpleTable # More info about SimpleTable Resource: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-simpletable.html
     Properties:
       PrimaryKey:
-        Name: Id
+        Name: uuid
         Type: String
       ProvisionedThroughput:
         ReadCapacityUnits: 1

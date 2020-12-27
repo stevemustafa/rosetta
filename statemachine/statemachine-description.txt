@@ -1,0 +1,113 @@
+
+Users will be invited to register and confirm their login - only regitered users will be allowed to upload file
+users will login and upload a file
+	files are uploaded to an S3 bucket {Raw}
+upon upload completion a Lambda function is triggered which registers the file owner initiates a StepFunction state machine
+
+the StateMachine runs as follows:
+
+1.	The file is checked to confirm that it follows the guidelines
+	on failure {Failure}
+2.	A Transcribe job is then started on the file in the S3 bucket {Raw}
+	on failure {Failure}
+3.  The Transcribe job is polled for completion
+4.	The Transcribe output is placed in a different S3 bucket {Transcribed}
+5.	The Transcribe success is logged and the file name is logged - the Admin is notified via email/SNS
+6.	A Translate Job is created on the file in {Transcribed}
+	on failure {Failure}
+7.	The Translate job is polled for completion
+8.	The Translated output is placed in a different S3 bucket {Translated}
+9.	The Translated success is logged and the file name is logged - the Admin is notified via email/SNS
+
+
+Failure:
+	The owner is notified via email through SNS and the StateMachine is stopped
+
+Buckets:
+	{Raw} 			conclaves-mena-raw
+	{Transcribed}	conclaves-mena-transcribed
+	{Translated}	conclaves-mena-translated
+
+
+
+States:
+
+    "Check_File_Validity": {
+      "Type" : "Task",
+      "Resource": "arn:aws:lambda:us-east-1:123456789012:function:OnFirstMatch",
+      "Next": "Start_Transcription_Job",
+      "Comment": "This state will confirm that the uploaded file is a valid sound source file",
+      "TimeoutSeconds": 300
+    }
+
+    "Start_Transcription_Job": {
+      "Type" : "Task",
+      "Resource": "arn:aws:lambda:us-east-1:123456789012:function:OnFirstMatch",
+      "Next": "wait_five_minutes",
+      "TimeoutSeconds": 300,
+      "Comment": "This state starts the file Transcription Job"
+    }
+
+    "wait_five_minutes": {
+  	  "Type": "Wait",
+  	  "Seconds": 300,
+  	  "Next": "Check_Transcription_Job_state",
+  	  "TimeoutSeconds": 360,
+  	  "Comment": "Wait for 300 seconds (5 minutes) before checking if the transcription job is completed"
+	}
+
+	"Check_Transcription_Job_state": {
+      "Type" : "Task",
+      "Resource": "arn:aws:lambda:us-east-1:123456789012:function:OnFirstMatch",
+      "Next": "NextState",
+      "TimeoutSeconds": 300,
+      "Comment": "This state starts the file Transcription Job"
+    }
+
+    "Is_transcription_job_done": {
+    	"Type": "Choice",
+    	"Comment": "Check if the transcription job result is done, if yes, continue if not, then wait again",
+    	"Choices": [
+
+    	]
+    }
+
+        "Get Job Status": {
+      "Type": "Task",
+      "Resource":
+      "arn:<PARTITION>:lambda:::function:CheckJob",
+      "Next": "Job Complete?",
+      "InputPath": "$.guid",
+      "ResultPath": "$.status",
+      "Retry": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2
+        }
+      ]
+    }
+
+        "Job Complete?": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.status",
+          "StringEquals": "FAILED",
+          "Next": "Job Failed"
+        },
+        {
+          "Variable": "$.status",
+          "StringEquals": "SUCCEEDED",
+          "Next": "Get Final Job Status"
+        }
+      ],
+      "Default": "Wait X Seconds"
+    }
+
+       "Job Failed": {
+      "Type": "Fail",
+      "Cause": "AWS Batch Job Failed",
+      "Error": "DescribeJob returned FAILED"
+    }
