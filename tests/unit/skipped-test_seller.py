@@ -1,7 +1,9 @@
-from functions.stock_seller import app
+import functions.stock_checker
 
-
+@pytest.mark.skip(reason="to be deprecated")
 def test_stock_checker():
+    pass
+    """
     stock_price = 25
     input_payload = {"stock_price": stock_price}
 
@@ -15,3 +17,4 @@ def test_stock_checker():
 
     assert data["type"] == "sell"
     assert data["price"] == str(stock_price)
+    """
