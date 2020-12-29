@@ -1,0 +1,106 @@
+{
+	"Comment": "A state machine that handles the validation, transcription and translation of the uploaded presentation videos for MENA Conclaves 2021",
+	"StartAt": "Validate uploaded file",
+	"States": {
+		"Validate uploaded file": {
+			"Type": "Task",
+			"Resource": "${FileValidatorFunction}",
+			"Retry": [{
+				"ErrorEquals": [
+					"States.TaskFailed"
+				],
+				"IntervalSeconds": 30,
+				"MaxAttempts": 5,
+				"BackoffRate": 1.5
+			}],
+			"Next": "Transcribe or Fail?",
+			"Comment": "Start the validation of the file uploaded to the S3 bucket"
+		},
+		"Transcribe or Fail?": {
+			"Type": "Choice",
+			"Choices": [{
+					"Variable": "$.valid",
+					"StringEquals": "valid",
+					"Next": "Begin Transcribe"
+				},
+				{
+					"Variable": "$.valid",
+					"StringEquals": "invalid",
+					"Next": "Notify invalid"
+				}
+			],
+			"Default": "Notify invalid",
+			"Comment": "After the lambda function has checked for validation, there are two choices, either to start the transcribe job or to notify of a failure - the default is to err on caution and notify of failure"
+		},
+		"Notify invalid": {
+			"Type": "Task",
+			"Resource": "${NotifyInvalidFunctionArn}",
+			"Retry": [{
+				"ErrorEquals": [
+					"States.TaskFailed"
+				],
+				"IntervalSeconds": 5,
+				"MaxAttempts": 3,
+				"BackoffRate": 1
+			}],
+			"Next": "Record Failure"
+		},
+		"Begin Transcribe": {
+			"Type": "Task",
+			"Resource": "${StockBuyerFunctionArn}",
+			"Retry": [{
+				"ErrorEquals": [
+					"States.TaskFailed"
+				],
+				"IntervalSeconds": 2,
+				"MaxAttempts": 3,
+				"BackoffRate": 1
+			}],
+			"Next": "Record Transaction"
+		},
+		"Record Failure": {
+			"Type": "Map",
+			"Iterator": {
+				"StartAt": "Update Table",
+				"States": {
+					"Update Table": {},
+					"Rename S3 Object": {},
+					"Notify Stakeholders": {
+						"End": true
+					}
+
+				}
+			},
+			"Resource": "${DDBPutItem}",
+			"Parameters": {
+				"TableName": "${DDBTable}",
+				"Item": {
+					"Id": {
+						"S.$": "$.id"
+					},
+					"Type": {
+						"S.$": "$.type"
+					},
+					"Price": {
+						"N.$": "$.price"
+					},
+					"Quantity": {
+						"N.$": "$.qty"
+					},
+					"Timestamp": {
+						"S.$": "$.timestamp"
+					}
+				}
+			},
+			"Retry": [{
+				"ErrorEquals": [
+					"States.TaskFailed"
+				],
+				"IntervalSeconds": 20,
+				"MaxAttempts": 5,
+				"BackoffRate": 10
+			}],
+			"End": true
+		}
+	}
+}
