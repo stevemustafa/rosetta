@@ -36,8 +36,8 @@ Currently, the validator does nothing, but the proposal is to check for all of:
 
 def lambda_handler(event, context):
     # log the event and context
-    logger.info(event)
-    logger.info(context)
+    # logger.info(event)
+    # logger.info(context)
 
     # FLAC, MP3, MP4, Ogg, WebM, AMR, or WAV
     acceptable_file_types = ['mp3', 'mp4', 'ogg', 'flac', 'webm', 'amr', 'wav']
@@ -63,9 +63,9 @@ def lambda_handler(event, context):
         "file_name": file_name,
         "uuid": uuid,
         "timestamp": timestamp,
-        "vslid": True
+        "valid": True
     }
-    logger.info(response)
+    # logger.info(response)
 
 
     return response

@@ -11,9 +11,10 @@ Resources:
     Properties:
       DefinitionUri: statemachine/rosetta_asl.json
       DefinitionSubstitutions:
-        StockCheckerFunctionArn: !GetAtt StockCheckerFunction.Arn
-        StockSellerFunctionArn: !GetAtt StockSellerFunction.Arn
-        StockBuyerFunctionArn: !GetAtt StockBuyerFunction.Arn
+#        StockCheckerFunctionArn: !GetAtt StockCheckerFunction.Arn
+#        StockSellerFunctionArn: !GetAtt StockSellerFunction.Arn
+#        StockBuyerFunctionArn: !GetAtt StockBuyerFunction.Arn
+        FileValidatorFunctionArn: !GetAtt FileValidatorFunction.Arn
         DDBPutItem: !Sub arn:${AWS::Partition}:states:::dynamodb:putItem
         DDBTable: !Ref TransactionTable
       Events:
@@ -24,35 +25,37 @@ Resources:
             Enabled: False # This schedule is disabled by default to avoid incurring charges.
             Schedule: "rate(1 hour)"
       Policies: # Find out more about SAM policy templates: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-policy-templates.html
+#        - LambdaInvokePolicy:
+#            FunctionName: !Ref StockCheckerFunction
+#        - LambdaInvokePolicy:
+#            FunctionName: !Ref StockSellerFunction
+#        - LambdaInvokePolicy:
+#            FunctionName: !Ref StockBuyerFunction
         - LambdaInvokePolicy:
-            FunctionName: !Ref StockCheckerFunction
-        - LambdaInvokePolicy:
-            FunctionName: !Ref StockSellerFunction
-        - LambdaInvokePolicy:
-            FunctionName: !Ref StockBuyerFunction
+            FunctionName: !Ref FileValidator
         - DynamoDBWritePolicy:
             TableName: !Ref TransactionTable
-
-  StockCheckerFunction:
-    Type: AWS::Serverless::Function # More info about Function Resource: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-function.html
-    Properties:
-      CodeUri: functions/stock_checker/
-      Handler: app.lambda_handler
-      Runtime: python3.8
-
-  StockSellerFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: functions/stock_seller/
-      Handler: app.lambda_handler
-      Runtime: python3.8
-
-  StockBuyerFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: functions/stock_buyer/
-      Handler: app.lambda_handler
-      Runtime: python3.8
+#
+#  StockCheckerFunction:
+#    Type: AWS::Serverless::Function # More info about Function Resource: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-function.html
+#    Properties:
+#      CodeUri: functions/stock_checker/
+#      Handler: app.lambda_handler
+#      Runtime: python3.8
+#
+#  StockSellerFunction:
+#    Type: AWS::Serverless::Function
+#    Properties:
+#      CodeUri: functions/stock_seller/
+#      Handler: app.lambda_handler
+#      Runtime: python3.8
+#
+#  StockBuyerFunction:
+#    Type: AWS::Serverless::Function
+#    Properties:
+#      CodeUri: functions/stock_buyer/
+#      Handler: app.lambda_handler
+#      Runtime: python3.8
 
   FileValidator:
     Type: AWS::Serverless::Function
@@ -60,6 +63,7 @@ Resources:
       CodeUri: functions/file_validator/
       Handler: app.lambda_handler
       Runtime: python3.8
+      Timeout: 10
 
   TransactionTable:
     Type: AWS::Serverless::SimpleTable # More info about SimpleTable Resource: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-simpletable.html
