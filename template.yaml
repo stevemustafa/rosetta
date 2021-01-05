@@ -5,22 +5,26 @@ Description: >
 
   Sample SAM Template for rosetta
 
+Globals:
+  Function:
+    Runtime: python3.8
+    Timeout: 10
+    Handler: app.lambda_handler
+    MemorySize: 128
+    # TODO: revisit and internal VPC configuration
+    # VpcConfig: XYZ
+
 Resources:
-  StockTradingStateMachine:
-    Type: AWS::Serverless::StateMachine # More info about State Machine Resource: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-statemachine.html
-    Properties:
-      DefinitionUri: statemachine/rosetta_asl.json
-      DefinitionSubstitutions:
-        FileValidatorFunctionArn: !GetAtt FileValidatorFunction.Arn
-      Policies: # Find out more about SAM policy templates: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-policy-templates.html
-        - LambdaInvokePolicy:
-            FunctionName: !Ref FileValidator
+  # TODO Add a well defined statemachine here - refer to the file ./statemachine/statemachine-description.txt
   FileValidator:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: functions/file_validator/
-      Handler: app.lambda_handler
-      Runtime: python3.8
-      Timeout: 10
 
+#      Handler: app.lambda_handler
+#      Runtime: python3.8
+#      Timeout: 10
+
+# template refernce:
+# https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-specification-template-anatomy.html
 
