@@ -1,6 +1,6 @@
 import pytest
 import file_validator.app
-import functions
+from functions.file_validator import file_validator, app
 from rosetta_types.exceptions import FileTypeIncorrect, FileTooLarge
 import os
 from pathlib import Path
@@ -32,7 +32,7 @@ def test_file_validator_should_pass(
         json_path='/Users/stemusta/Desktop/Conclaves/POC/rosetta/functions/file_validator/pass_sampleJSON.json'):
     with open(json_path) as json_file:
         payload = json.load(json_file)
-    result = functions.file_validator.lambda_handler(payload, None)
+    result = file_validator.lambda_handler(payload, None)
     print(result)
     assert result['valid'] == True
     assert result['file_size'] < (2 * 1024 * 1024 * 1024)
