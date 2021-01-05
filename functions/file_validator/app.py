@@ -1,14 +1,10 @@
 from datetime import datetime
 from uuid import uuid4
 import logging
-# from rosetta_types import FileTypeIncorrect, FileTooLarge
 from rosetta_types.exceptions import FileTypeIncorrect, FileTooLarge
-
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-
-
 
 '''
 Currently, the validator does nothing, but the proposal is to check for all of:
@@ -27,8 +23,9 @@ def lambda_handler(event, context):
 
     # Get the uploaded file name and ARN
     s3 = event['Records'][0]['s3']
-    file_size = s3['object']['size']  # in S3, sizes are in bytes, must convert to something human readable (divide by 1024 for kB)
-    if file_size > (2 * 1024 * 1024 * 1024): # calculated binary 2GB
+    file_size = s3['object'][
+        'size']  # in S3, sizes are in bytes, must convert to something human readable (divide by 1024 for kB)
+    if file_size > (2 * 1024 * 1024 * 1024):  # calculated binary 2GB
         raise FileTooLarge(file_size=file_size)
     file_name = s3['object']['key']
 
@@ -49,6 +46,5 @@ def lambda_handler(event, context):
         "valid": True
     }
     # logger.info(response)
-
 
     return response
