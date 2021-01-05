@@ -1,6 +1,6 @@
 import pytest
 import file_validator.app
-from functions.file_validator import file_validator, app
+from functions import file_validator
 from rosetta_types.exceptions import FileTypeIncorrect, FileTooLarge
 import os
 from pathlib import Path
@@ -118,13 +118,13 @@ def test_file_validator_generated_event_should_fail(key, bucket, expected):
 
     val = json.load(response['Payload'])
     # assert that the response is both valid, the size is less than 2GB, the file extension is acceptable
-    assert "errorType" not in val
-    assert val['valid'] == True
-    assert val['file_size'] < (2 * 1024 ** 3)
-    assert str(val['file_name']).split('.')[-1] in ['mp3', 'mp4', 'ogg', 'flac', 'webm', 'amr', 'wav']
+    assert val["errorType"] == FileTooLarge.__name__ or val["errorType"] == FileTypeIncorrect.__name__
+    # assert val['valid'] == True
+    # assert val['file_size'] < (2 * 1024 ** 3)
+    # assert str(val['file_name']).split('.')[-1] in ['mp3', 'mp4', 'ogg', 'flac', 'webm', 'amr', 'wav']
 
 
-# TODO: assert for "Unhandled exceptions" in respons - .xyz file example
+# TODO: assert for "Unhandled exceptions" in response - .xyz file example
 # TODO: parametrize with expected values so that specific parameters can fail automatically
 # TODO: Jupyter notebook for the blog post on how to unit test - for subprocess, reference:  https://linuxhint.com/execute_shell_python_subprocess_run_method/
 
@@ -136,20 +136,22 @@ def test_file_validator_generated_event_should_fail(key, bucket, expected):
 
 
 def test_file_validator_should_fail_filetype(
-        json_path='/Users/stemusta/Desktop/Conclaves/POC/rosetta/functions/file_validator/fail_incorrectfiletype_sampleJSON.json'):
+        json_path='/Users/stemusta/Desktop/Conclaves/POC/rosetta/functions/file_validator'
+                  '/fail_incorrectfiletype_sampleJSON.json'):
     with open(json_path) as json_file:
         payload = json.load(json_file)
     try:
-        result = functions.file_validator.lambda_handler(payload, None)
-    except functions.file_validator.FileTypeIncorrect as fti:
+        result = file_validator.lambda_handler(payload, None)
+    except file_validator.FileTypeIncorrect as fti:
         logger.exception(fti.message)
 
 
 def test_file_validator_should_fail_filesize(
-        json_path='/Users/stemusta/Desktop/Conclaves/POC/rosetta/functions/file_validator/fail_filetoobig_sampleJSON.json'):
+        json_path='/Users/stemusta/Desktop/Conclaves/POC/rosetta/functions/file_validator/fail_filetoobig_sampleJSON'
+                  '.json'):
     with open(json_path) as json_file:
         payload = json.load(json_file)
     try:
-        result = functions.file_validator.lambda_handler(payload, None)
-    except functions.file_validator.FileTooLarge as ftl:
+        result = file_validator.lambda_handler(payload, None)
+    except file_validator.FileTooLarge as ftl:
         logger.exception(ftl.message)

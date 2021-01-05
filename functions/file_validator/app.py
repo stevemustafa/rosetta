@@ -25,7 +25,7 @@ def lambda_handler(event, context):
     s3 = event['Records'][0]['s3']
     file_size = s3['object'][
         'size']  # in S3, sizes are in bytes, must convert to something human readable (divide by 1024 for kB)
-    if file_size > (2 * 1024 * 1024 * 1024):  # calculated binary 2GB
+    if file_size > (2 * (1024 ** 3)):  # calculated binary 2GB
         raise FileTooLarge(file_size=file_size)
     file_name = s3['object']['key']
 
