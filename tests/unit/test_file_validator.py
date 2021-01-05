@@ -1,6 +1,7 @@
 import pytest
-from .. import functions as functions
-import .. functions.
+import file_validator.app
+import functions
+from rosetta_types.exceptions import FileTypeIncorrect, FileTooLarge
 import os
 from pathlib import Path
 import json
@@ -60,15 +61,16 @@ pass_testdata = [
     pytest.param('my-test-wav.wav', 'mena-conclaves-src'),
 ]
 
-@pytest.mark.parametrize("key, bucket", pass_testdata)
-def test_file_validator_generated_event_should_pass(key, bucket):
+def generate_event_data(key, bucket):
     generate_event_process = subprocess.run(
         ['sam', 'local', 'generate-event', 's3', 'put', '--bucket', '{}'.format(bucket), '--key', '{}'.format(key)],
         capture_output=True)
-    # capture any kwargs if any
+    return generate_event_process.stdout
 
-    # generated_payload = json.loads(generate_event_process.stdout)
-    generated_payload = generate_event_process.stdout
+@pytest.mark.parametrize("key, bucket", pass_testdata)
+def test_file_validator_generated_event_should_pass(key, bucket):
+
+    generated_payload = generate_event_data(key, bucket)
 
     # Create Lambda SDK client to connect to appropriate Lambda endpoint
     client = boto3.client('lambda', endpoint_url="http://127.0.0.1:3001",
@@ -95,15 +97,11 @@ fail_testdata = [
     pytest.param('my-test-xyz.xyz', 'mena-conclaves-src', pytest.raises(FileTypeIncorrect))
 ]
 
-@pytest.mark.parametrize("key, bucket", fail_testdata)
-def test_file_validator_generated_event_should_fail(key, bucket):
-    generate_event_process = subprocess.run(
-        ['sam', 'local', 'generate-event', 's3', 'put', '--bucket', '{}'.format(bucket), '--key', '{}'.format(key)],
-        capture_output=True)
-    # capture any kwargs if any
 
-    # generated_payload = json.loads(generate_event_process.stdout)
-    generated_payload = generate_event_process.stdout
+@pytest.mark.parametrize("key, bucket, expected", fail_testdata)
+def test_file_validator_generated_event_should_fail(key, bucket, expected):
+
+    generated_payload = generate_event_data(key, bucket)
 
     # Create Lambda SDK client to connect to appropriate Lambda endpoint
     client = boto3.client('lambda', endpoint_url="http://127.0.0.1:3001",

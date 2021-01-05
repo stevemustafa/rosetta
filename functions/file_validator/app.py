@@ -1,10 +1,8 @@
 from datetime import datetime
-from random import randint
 from uuid import uuid4
-import boto3
-import json
 import logging
-from exc
+# from rosetta_types import FileTypeIncorrect, FileTooLarge
+from rosetta_types.exceptions import FileTypeIncorrect, FileTooLarge
 
 
 logger = logging.getLogger()
